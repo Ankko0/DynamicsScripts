@@ -1,0 +1,21 @@
+<fetch top="50">
+  <entity name="nav_agreement">
+    <attribute name="nav_creditperiod" />
+    <attribute name="nav_creditid" />
+    <link-entity name="nav_auto" from="nav_autoid" to="nav_autoid" link-type="outer" visible="true">
+      <attribute name="nav_modelid" />
+      <link-entity name="nav_model" from="nav_modelid" to="nav_modelid">
+        <attribute name="nav_name" />
+      </link-entity>
+      <link-entity name="nav_brand" from="nav_brandid" to="nav_brandid">
+        <attribute name="nav_name" />
+        <filter>
+          <condition attribute="nav_name" operator="eq" value="Mercedess" />
+        </filter>
+      </link-entity>
+    </link-entity>
+    <link-entity name="nav_credit" from="nav_creditid" to="nav_creditid" link-type="outer">
+      <attribute name="nav_name" />
+    </link-entity>
+  </entity>
+</fetch>

@@ -80,30 +80,32 @@ Navicon.nav_agreement = (function () {
         OnSave: function (context) {
             let formContext = context.getFormContext();
             let dateAttr = formContext.getAttribute('nav_date');
-            Xrm.WebApi.retrieveRecord("nav_credit", formContext.getAttribute("nav_creditid").getValue()[0].id, "?$select=nav_datestart,nav_dateend")
-                .then(function (creditResult) {
-                        console.log("Date Start:" + creditResult.nav_datestart + " Date End:" + creditResult.nav_dateend);
-                        var creditDateStart = moment(creditResult.nav_datestart);
-                        var creditDateEnd = moment(creditResult.nav_dateend);
-                        var agreemDate = moment(dateAttr.getValue());
-                        if (creditDateStart.add(1, 'years').isAfter(creditDateEnd)) {
-                            var saveEvent = context.getEventArgs();
-                            formContext.ui.setFormNotification("Срок действия кредитного договора меньше одного года", "ERROR", "ER-WRNG-CRDT-DAT");
-                            /* НЕ РАБОТАЕТ !*/
-                            saveEvent.preventDefault();
+            let creditAttr = formContext.getAttribute("nav_creditid");
+            if (creditAttr !== null && creditAttr.getValue() !== null)
+                Xrm.WebApi.retrieveRecord("nav_credit", creditAttr.getValue()[0].id, "?$select=nav_datestart,nav_dateend")
+                    .then(function (creditResult) {
+                            console.log("Date Start:" + creditResult.nav_datestart + " Date End:" + creditResult.nav_dateend);
+                            var creditDateStart = moment(creditResult.nav_datestart);
+                            var creditDateEnd = moment(creditResult.nav_dateend);
+                            var agreemDate = moment(dateAttr.getValue());
+                            if (creditDateStart.add(1, 'years').isAfter(creditDateEnd)) {
+                                var saveEvent = context.getEventArgs();
+                                formContext.ui.setFormNotification("Срок действия кредитного договора меньше одного года", "ERROR", "ER-WRNG-CRDT-DAT");
+                                /* НЕ РАБОТАЕТ !*/
+                                saveEvent.preventDefault();
+                            }
+                            /* НАДО ФИКСИТЬ */
+                            else if (dateAttr.getValue() !== null && (agreemDate.isAfter(creditDateEnd) || agreemDate.isBefore(creditDateStart))) {
+                                var saveEvent = context.getEventArgs();
+                                formContext.ui.setFormNotification("Срок действия кредитного договора не соответствует дате договора.", "ERROR", "ER-WRNG-AGRM-DAT");
+                                /* НЕ РАБОТАЕТ !*/
+                                saveEvent.preventDefault();
+                            } else {
+                                formContext.ui.clearFormNotification("ER-WRNG-CRDT-DAT");
+                                formContext.ui.clearFormNotification("ER-WRNG-AGRM-DAT");
+                            }
                         }
-                        /* НАДО ФИКСИТЬ */
-                        else if (dateAttr.getValue() !== null && (agreemDate.isAfter(creditDateEnd) || agreemDate.isBefore(creditDateStart))) {
-                            var saveEvent = context.getEventArgs();
-                            formContext.ui.setFormNotification("Срок действия кредитного договора не соответствует дате договора.", "ERROR", "ER-WRNG-AGRM-DAT");
-                            /* НЕ РАБОТАЕТ !*/
-                            saveEvent.preventDefault();
-                        } else {
-                            formContext.ui.clearFormNotification("ER-WRNG-CRDT-DAT");
-                            formContext.ui.clearFormNotification("ER-WRNG-AGRM-DAT");
-                        }
-                    }
-                );
+                    );
         },
 
         CreditRecount: function () {
