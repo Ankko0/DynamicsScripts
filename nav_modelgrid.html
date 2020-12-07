@@ -5,49 +5,21 @@
     <title>Title</title>
     <script src="ClientGlobalContext.js.aspx" type="text/javascript`"></script>
     <link rel="stylesheet" href="https://trial16.crm4.dynamics.com//WebResources/nav_brandgridstyle"/>
-    <style media="only screen">
-        html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            box-sizing: border-box;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        html {
-            position: absolute;
-            top: 0;
-            left: 0;
-            padding: 0;
-            overflow: auto;
-        }
-
-        body {
-            padding: 1rem;
-            overflow: auto;
-        }
-
-        .outer-div {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .grid-wrapper {
-            flex: 1 1 auto;
-        }
-    </style>
     <script src="https://unpkg.com/@ag-grid-community/all-modules@24.1.0/dist/ag-grid-community.min.js"></script>
-
+    <!--
+    Создать Веб-ресурс и расположить его на форме марки автомобиля Iframe. В Iframe отображать все кредитные программы, в которых участвуют автомобили этой марки.
+    Дублирующие записи не должны отображаться в гриде. Внешний вид должен быть похож интерфейсу CRM (Цвета. Шрифты).
+    В гриде должны отображаться:
+    Кредитная программа, Модель, Срок кредита.
+    При клике по названию кредитной программы или модели, должны открываться соответствующие объекты в отдельном окне.
+    -->
     <script>
-
         document.onreadystatechange = function () {
             if (document.readyState === "complete")
                 OnDocumentLoad();
         }
 
         function MakeCellClickable(params) {
-            debugger;
             let url = `<a href=\"https://trial16.crm4.dynamics.com/main.aspx?app=d365default&pagetype=entityrecord&etn=${params.value.type}&id=${params.value.id}\" target="\_blank"\>${params.value.name}</a>`;
             return url;
         }
@@ -63,41 +35,43 @@
             var gridOptions = {
                 columnDefs: columnDefs,
             };
-
-            var gridDiv = document.querySelector('#myGrid');
-            new agGrid.Grid(gridDiv, gridOptions);
             let formContext = parent.Xrm.Page;
-            let brandFormName = formContext.getAttribute("nav_name").getValue();
-            let dataRecords = [];
-            // 'nav_agreement','?$select=nav_creditperiod,_nav_creditid_value&$expand=nav_autoid($select=_nav_modelid_value)&$top=50'
-            //'nav_agreement','?$select=nav_creditperiod,_nav_creditid_value&$expand=nav_autoid($select=_nav_modelid_value;$expand=nav_modelid($select=nav_name)),nav_creditid($select=nav_name)&$top=50'
-            let oDataQuery = '?$select=nav_creditperiod,_nav_creditid_value&$expand=nav_autoid($select=_nav_modelid_value;$expand=nav_modelid($select=nav_name),nav_brandid($select=nav_name)),nav_creditid($select=nav_name)&$top=50';
-            parent.Xrm.WebApi.retrieveMultipleRecords('nav_agreement', oDataQuery)
-                .then(
-                    function (result) {
-                        for (let record of result.entities) {
-                            let brandName = record.nav_autoid.nav_brandid.nav_name;
-                            let modelName = record.nav_autoid.nav_modelid.nav_name;
-                            let modelID = record.nav_autoid.nav_modelid.nav_modelid;
-                            let creditName = record.nav_creditid.nav_name;
-                            let creditId = record.nav_creditid.nav_creditid;
-                            let rowData = {
-                                credit: {id: creditId, name: creditName, type: "nav_credit"},
-                                model: {id: modelID, name: modelName, type: "nav_model"},
-                                creditPeriod: record.nav_creditperiod
+            try {
+                var gridDiv = document.querySelector('#myGrid');
+                new agGrid.Grid(gridDiv, gridOptions);
+                let brandFormName = formContext.getAttribute("nav_name").getValue();
+                let dataRecords = [];
+                let oDataQuery = '?$select=nav_creditperiod,_nav_creditid_value&$expand=nav_autoid($select=_nav_modelid_value;$expand=nav_modelid($select=nav_name),nav_brandid($select=nav_name)),nav_creditid($select=nav_name)&$top=50';
+                parent.Xrm.WebApi.retrieveMultipleRecords('nav_agreement', oDataQuery)
+                    .then(
+                        function (result) {
+                            for (let record of result.entities) {
+                                let brandName = record.nav_autoid.nav_brandid.nav_name;
+                                let modelName = record.nav_autoid.nav_modelid.nav_name;
+                                let modelID = record.nav_autoid.nav_modelid.nav_modelid;
+                                let creditName = record.nav_creditid.nav_name;
+                                let creditId = record.nav_creditid.nav_creditid;
+                                let rowData = {
+                                    credit: {id: creditId, name: creditName, type: "nav_credit"},
+                                    model: {id: modelID, name: modelName, type: "nav_model"},
+                                    creditPeriod: record.nav_creditperiod
+                                }
+                                /* Переделать запрос на получение только необходимых данных*/
+                                if (brandName === brandFormName)
+                                    dataRecords.push(rowData);
                             }
-                            /* Переделать запрос на получение только необходимых данных*/
-                            if (brandName === brandFormName)
-                                dataRecords.push(rowData);
-                        }
-                        gridOptions.api.setRowData(dataRecords);
+                            gridOptions.api.setRowData(dataRecords);
 
-                    },
-                    function (error) {
-                        console.log(error.message);
-                    }
-                );
-            gridOptions.api.sizeColumnsToFit();
+                        },
+                        function (error) {
+                            console.log(error.message);
+                        }
+                    );
+                gridOptions.api.sizeColumnsToFit();
+            } catch (e) {
+                formContext.ui.setFormNotification("Ошибка, возможно отсустствует поле. " + e.message, "ERROR", "ER-WRNG-AGRM-DAT");
+            }
+
         }
     </script>
 </head>

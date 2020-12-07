@@ -12,6 +12,12 @@ Navicon = {
 }
 
 Navicon.nav_communication = (function () {
+    /*
+    На форме объекта Средство связи, при создании поля Телефон и Email скрыты.
+    При выборе пользователем значения в поле Тип, необходимо отображать соответствующее поле:
+    Если тип = Телефон, отображать поле Телефон
+    Если тип = E-mail, отображать поле Email.
+    */
     function TypeOnChange(context) {
         let formContext = context.getFormContext();
         let typeText = formContext.getAttribute('nav_type').getText();
@@ -30,11 +36,15 @@ Navicon.nav_communication = (function () {
     return {
         OnLoad: function (context) {
             let formContext = context.getFormContext();
-            if (formContext.ui.getFormType() === Navicon.formTypeEnum.Create) {
-                formContext.getControl('nav_phone').setVisible(false);
-                formContext.getControl('nav_email').setVisible(false);
+            try {
+                if (formContext.ui.getFormType() === Navicon.formTypeEnum.Create) {
+                    formContext.getControl('nav_phone').setVisible(false);
+                    formContext.getControl('nav_email').setVisible(false);
+                }
+                formContext.getAttribute('nav_type').addOnChange(TypeOnChange);
+            } catch (e) {
+                formContext.ui.setFormNotification("Ошибка, возможно отсустствует поле. " + e.message, "ERROR", "ER-WRNG-AGRM-DAT");
             }
-            formContext.getAttribute('nav_type').addOnChange(TypeOnChange);
         }
 
     }
