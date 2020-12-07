@@ -57,11 +57,15 @@
                                     creditPeriod: record.nav_creditperiod
                                 }
                                 /* Переделать запрос на получение только необходимых данных*/
-                                if (brandName === brandFormName)
-                                    dataRecords.push(rowData);
+                                if (brandName === brandFormName) {
+                                    var hasDublicate = dataRecords.some(function (value) {
+                                        return value.credit.id === rowData.credit.id && value.model.id === rowData.model.id && value.creditPeriod === rowData.creditPeriod;
+                                    })
+                                    if (!hasDublicate)
+                                        dataRecords.push(rowData);
+                                }
                             }
                             gridOptions.api.setRowData(dataRecords);
-
                         },
                         function (error) {
                             console.log(error.message);
